@@ -44,6 +44,32 @@ No API key is required to run the tests. Live use requires an organization key
 whose value starts with `kh_`; keep it in a secret manager or environment
 variable and never commit it.
 
+## Capture live evidence
+
+The evidence command defaults to simulation-only and writes a new, secret-free
+JSON packet. It refuses to overwrite an existing packet:
+
+```bash
+python -m proofline_keeper.live_demo \
+  --recipient 0xYOUR_BASE_SEPOLIA_ADDRESS \
+  --output evidence/base-sepolia-simulation.json
+```
+
+Broadcast requires both an explicit flag and a holder approval reference. The
+same simulated intent is amount-capped, hash-bound and sent once with a stable
+idempotency key:
+
+```bash
+python -m proofline_keeper.live_demo \
+  --recipient 0xYOUR_BASE_SEPOLIA_ADDRESS \
+  --output evidence/base-sepolia-live.json \
+  --broadcast \
+  --approval-id HOLDER_APPROVAL_REFERENCE
+```
+
+The final packet records KeeperHub's `executionId`, transaction hash, block
+explorer link and polling hint. It never records `KH_API_KEY`.
+
 ## Planned KeeperHub flow
 
 1. Build a `TransactionIntent` from the requested action.

@@ -11,6 +11,7 @@ from proofline_keeper import (
     fingerprint_intent,
 )
 from proofline_keeper.keeperhub import ApiResponse, KeeperHubClient, KeeperHubError
+from proofline_keeper.live_demo import capture_evidence
 
 
 NOW = datetime(2026, 8, 5, 18, 0, tzinfo=timezone.utc)
@@ -122,3 +123,55 @@ def test_api_key_is_not_exposed_by_safe_error():
         client.enabled_testnets()
 
     assert "kh_unit" not in str(caught.value)
+
+
+def test_live_demo_defaults_to_simulation_only():
+    fake = FakeTransport([
+        ApiResponse(200, {"chains": [{
+            "chainId": 84532, "name": "Base Sepolia", "status": "stable",
+            "isEnabled": True, "isTestnet": True,
+        }]}, {}),
+        ApiResponse(200, {
+            "success": True, "wouldRevert": False, "gasEstimate": "21000",
+        }, {}),
+    ])
+
+    packet = capture_evidence(
+        KeeperHubClient("kh_test_secret", transport=fake),
+        recipient=TO,
+        amount="0.000001",
+    )
+
+    assert packet["decision"]["code"] == "APPROVAL_REQUIRED"
+    assert packet["broadcast"] is None
+    assert len(fake.calls) == 2
+
+
+def test_live_demo_broadcasts_once_and_captures_authoritative_link():
+    fake = FakeTransport([
+        ApiResponse(200, {"chains": [{
+            "chainId": "84532", "name": "Base Sepolia", "status": "stable",
+            "isEnabled": True, "isTestnet": True,
+        }]}, {}),
+        ApiResponse(200, {
+            "success": True, "wouldRevert": False, "gasEstimate": "21000",
+        }, {}),
+        ApiResponse(202, {"executionId": "direct_live", "status": "completed"}, {}),
+        ApiResponse(200, {
+            "executionId": "direct_live", "status": "completed",
+            "transactionHash": "0xabc", "transactionLink": "https://sepolia.basescan.org/tx/0xabc",
+        }, {"X-Poll-Interval-Hint": "0"}),
+    ])
+
+    packet = capture_evidence(
+        KeeperHubClient("kh_test_secret", transport=fake),
+        recipient=TO,
+        amount="0.000001",
+        approval_id="holder-approved-demo-001",
+    )
+
+    assert packet["decision"]["code"] == "READY"
+    assert packet["status"]["body"]["transactionHash"] == "0xabc"
+    assert packet["status"]["poll_interval_hint"] == "0"
+    assert len(fake.calls) == 4
+    assert fake.calls[2].headers["Idempotency-Key"].startswith("proofline-")
