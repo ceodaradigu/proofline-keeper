@@ -10,7 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
-from typing import Callable, Mapping
+import re
+from typing import Callable, Mapping, TypeAlias
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -22,10 +23,13 @@ from .core import (
 )
 
 
+JsonBody: TypeAlias = dict[str, object] | list[object]
+
+
 @dataclass(frozen=True)
 class ApiResponse:
     status: int
-    body: dict[str, object]
+    body: JsonBody
     headers: Mapping[str, str]
 
 
@@ -33,7 +37,9 @@ class KeeperHubError(RuntimeError):
     """Safe API error that never contains request headers or API keys."""
 
 
-Transport = Callable[[str, str, dict[str, object] | None, Mapping[str, str]], ApiResponse]
+Transport = Callable[
+    [str, str, dict[str, object] | None, Mapping[str, str]], ApiResponse
+]
 
 
 def _urllib_transport(
@@ -42,7 +48,11 @@ def _urllib_transport(
     body: dict[str, object] | None,
     headers: Mapping[str, str],
 ) -> ApiResponse:
-    data = None if body is None else json.dumps(body, separators=(",", ":")).encode("utf-8")
+    data = (
+        None
+        if body is None
+        else json.dumps(body, separators=(",", ":")).encode("utf-8")
+    )
     request = Request(url, data=data, headers=dict(headers), method=method)
     try:
         with urlopen(request, timeout=20) as response:
@@ -55,7 +65,7 @@ def _urllib_transport(
             parsed = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
             parsed = {"error": "KeeperHub returned a non-JSON error."}
-        message = parsed.get("error", "KeeperHub request failed.")
+        message = parsed.get("detail", parsed.get("error", "KeeperHub request failed."))
         raise KeeperHubError(f"KeeperHub HTTP {error.code}: {message}") from None
     except URLError as error:
         raise KeeperHubError(f"KeeperHub connection failed: {error.reason}") from None
@@ -89,12 +99,22 @@ class KeeperHubClient:
             "Authorization": f"Bearer {self._api_key}",
             "Accept": "application/json",
             "Content-Type": "application/json",
+            "User-Agent": (
+                "Proofline-Keeper/0.1 "
+                "(+https://github.com/ceodaradigu/proofline-keeper)"
+            ),
         }
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
         response = self._transport(method, self._base_url + path, body, headers)
         if not 200 <= response.status < 300:
-            message = response.body.get("error", "KeeperHub request failed.")
+            message = (
+                response.body.get(
+                    "detail", response.body.get("error", "KeeperHub request failed.")
+                )
+                if isinstance(response.body, dict)
+                else "KeeperHub request failed."
+            )
             raise KeeperHubError(f"KeeperHub HTTP {response.status}: {message}")
         return response
 
@@ -111,7 +131,11 @@ class KeeperHubClient:
 
     def enabled_testnets(self) -> list[dict[str, object]]:
         response = self._request("GET", "/api/chains")
-        chains = response.body.get("chains", response.body)
+        chains = (
+            response.body.get("chains", response.body)
+            if isinstance(response.body, dict)
+            else response.body
+        )
         if isinstance(chains, list):
             return [
                 chain
@@ -127,6 +151,10 @@ class KeeperHubClient:
         body["simulate"] = True
         response = self._request("POST", "/api/execute/transfer", body)
         payload = response.body
+        if not isinstance(payload, dict):
+            raise KeeperHubError(
+                "KeeperHub returned an unexpected simulation response."
+            )
         return SimulationReceipt(
             intent_hash=fingerprint_intent(intent),
             success=payload.get("success") is True,
@@ -140,7 +168,11 @@ class KeeperHubClient:
         intent: TransactionIntent,
         decision: ExecutionDecision,
     ) -> dict[str, object]:
-        if not decision.ready or decision.code != "READY" or not decision.idempotency_key:
+        if (
+            not decision.ready
+            or decision.code != "READY"
+            or not decision.idempotency_key
+        ):
             raise KeeperHubError("Broadcast blocked: execution decision is not READY.")
         if decision.intent_hash != fingerprint_intent(intent):
             raise KeeperHubError("Broadcast blocked: intent changed after approval.")
@@ -150,9 +182,14 @@ class KeeperHubClient:
             self._transfer_body(intent),
             idempotency_key=decision.idempotency_key,
         )
+        if not isinstance(response.body, dict):
+            raise KeeperHubError("KeeperHub returned an unexpected broadcast response.")
         return response.body
 
     def execution_status(self, execution_id: str) -> ApiResponse:
-        if not execution_id.startswith("direct_"):
+        # Treat execution IDs as opaque path segments. KeeperHub documents a
+        # ``direct_`` example, but live deployments may return UUID-like IDs.
+        # Validate the path boundary without coupling the client to a prefix.
+        if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", execution_id) is None:
             raise ValueError("Invalid direct execution id.")
         return self._request("GET", f"/api/execute/{execution_id}/status")
