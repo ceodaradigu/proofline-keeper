@@ -1,0 +1,78 @@
+{
+  "broadcast": {
+    "executionId": "wl0b2ni7142qluy0qvvko",
+    "status": "completed",
+    "transactionHash": "0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040",
+    "transactionLink": "https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040"
+  },
+  "captured_at": "2026-08-06T20:00:52.118393+00:00",
+  "decision": {
+    "code": "READY",
+    "idempotency_key": "proofline-5a7e8856ae88d6254a195f838749d47d",
+    "intent_hash": "f62357f94055787acb8bffba3b25b531775d6096558984bd057bf3274e4addee",
+    "ready": true,
+    "reason": "Exact intent is simulated, within limits and explicitly approved.",
+    "simulation_hash": "ecbe69087f23f09f9d6486bed2f3631dfc96767895f234ae909d4a8887adc820"
+  },
+  "intent": {
+    "amount": "0.000001",
+    "chain_id": 84532,
+    "purpose": "Proofline Keeper hackathon evidence on Base Sepolia",
+    "to_address": "0xa045788c1e3f539b40c264b7702452e8df01464b",
+    "token_address": null
+  },
+  "network": {
+    "chain_id": 84532,
+    "name": "Base Sepolia",
+    "status": "stable"
+  },
+  "schema": "proofline-keeper-evidence/v1",
+  "simulation": {
+    "gas_estimate": "21227",
+    "intent_hash": "f62357f94055787acb8bffba3b25b531775d6096558984bd057bf3274e4addee",
+    "observed_at": "2026-08-06T20:00:52.118393+00:00",
+    "provider": "keeperhub",
+    "success": true,
+    "would_revert": false
+  },
+  "status": {
+    "body": {
+      "completedAt": "2026-08-06T20:00:55.139Z",
+      "createdAt": "2026-08-06T20:00:52.539Z",
+      "error": null,
+      "estimatedCostUsd": null,
+      "executionId": "wl0b2ni7142qluy0qvvko",
+      "gasPriceWei": "6000000",
+      "gasUsedWei": "47681",
+      "network": "84532",
+      "receipts": [
+        {
+          "blockNumber": 45139083,
+          "chainId": 84532,
+          "gasUsed": "47681",
+          "hash": "0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040",
+          "receiptStatus": "success",
+          "verified": true,
+          "verifiedAt": "2026-08-06T20:00:55.057Z"
+        }
+      ],
+      "result": {
+        "chainId": 84532,
+        "effectiveGasPrice": "6000000",
+        "gasUsed": "47681",
+        "gasUsedUnits": "47681",
+        "sponsored": true,
+        "success": true,
+        "transactionHash": "0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040",
+        "transactionLink": "https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040"
+      },
+      "retryCount": 0,
+      "sponsored": true,
+      "status": "completed",
+      "transactionHash": "0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040",
+      "transactionLink": "https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040",
+      "type": "transfer"
+    },
+    "poll_interval_hint": null
+  }
+}

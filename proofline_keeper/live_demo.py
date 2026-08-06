@@ -89,26 +89,46 @@ def capture_evidence(
     )
     ready = evaluate_execution(intent, simulation, ticket, now=checked_at)
     broadcast = client.broadcast_transfer(intent, ready)
+    evidence["broadcast"] = broadcast
     execution_id = broadcast.get("executionId")
     if not isinstance(execution_id, str):
         raise KeeperHubError("Broadcast response did not include an executionId.")
-    status = client.execution_status(execution_id)
     evidence["decision"] = ready.to_dict()
-    evidence["broadcast"] = broadcast
-    evidence["status"] = {
-        "body": status.body,
-        "poll_interval_hint": status.headers.get("X-Poll-Interval-Hint"),
-    }
+    try:
+        status = client.execution_status(execution_id)
+    except (KeeperHubError, ValueError) as error:
+        # A broadcast may already be final and carry its authoritative hash.
+        # Preserve that response instead of losing all evidence merely because
+        # a follow-up status lookup is temporarily unavailable.
+        evidence["status"] = {
+            "body": {"status": "unavailable", "error": str(error)},
+            "poll_interval_hint": None,
+        }
+    else:
+        evidence["status"] = {
+            "body": status.body,
+            "poll_interval_hint": status.headers.get("X-Poll-Interval-Hint"),
+        }
     return evidence
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--recipient", required=True, help="Base Sepolia recipient address")
-    parser.add_argument("--amount", default="0.000001", help="Native testnet ETH amount")
-    parser.add_argument("--output", type=Path, required=True, help="New JSON evidence file")
-    parser.add_argument("--broadcast", action="store_true", help="Broadcast after a passing simulation")
-    parser.add_argument("--approval-id", help="Holder approval reference; required with --broadcast")
+    parser.add_argument(
+        "--recipient", required=True, help="Base Sepolia recipient address"
+    )
+    parser.add_argument(
+        "--amount", default="0.000001", help="Native testnet ETH amount"
+    )
+    parser.add_argument(
+        "--output", type=Path, required=True, help="New JSON evidence file"
+    )
+    parser.add_argument(
+        "--broadcast", action="store_true", help="Broadcast after a passing simulation"
+    )
+    parser.add_argument(
+        "--approval-id", help="Holder approval reference; required with --broadcast"
+    )
     args = parser.parse_args()
 
     if args.broadcast != bool(args.approval_id):

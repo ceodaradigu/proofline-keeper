@@ -15,9 +15,10 @@ change, stale simulations are reused, approvals are interpreted too broadly,
 or retries create duplicate writes. Proofline Keeper makes those failure modes
 explicit and deterministic.
 
-The repository contains the deterministic safety core and a minimal adapter for
-KeeperHub's documented Direct Execution API. It does **not** yet claim a
-broadcast transaction, hosted demo, or prize.
+The repository contains the deterministic safety core, a minimal adapter for
+KeeperHub's documented Direct Execution API, and a secret-free evidence packet
+from a verified Base Sepolia transaction. It does **not** claim a prize or
+payment before the organizer confirms one.
 
 ## Safety invariants
 
@@ -70,6 +71,20 @@ python -m proofline_keeper.live_demo \
 The final packet records KeeperHub's `executionId`, transaction hash, block
 explorer link and polling hint. It never records `KH_API_KEY`.
 
+## Verified live evidence
+
+- Network: Base Sepolia (`84532`)
+- Exact transfer: `0.000001` testnet ETH to the organization wallet
+- KeeperHub execution: `wl0b2ni7142qluy0qvvko`
+- Status: `completed`; receipt `verified: true`, `receiptStatus: success`
+- Gas: `47681` units, sponsored by KeeperHub
+- Transaction: https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040
+- Evidence packet: `evidence/base-sepolia-live.json`
+
+The transaction was also checked independently through the public Base Sepolia
+JSON-RPC endpoint: block `45139083`, receipt status `1`, and gas used `47681`.
+Testnet ETH has no monetary value and no mainnet funds were used.
+
 ## Planned KeeperHub flow
 
 1. Build a `TransactionIntent` from the requested action.
@@ -89,5 +104,5 @@ funds will not be used merely to create a hackathon demo.
 
 Built for the worldwide KeeperHub Agents Onchain Hackathon. The target is the
 main agent prize and the separately judged Best Onboarding UX Improvement
-bounty. The final submission still requires a public repository, a demo video,
-and a real transaction executed through KeeperHub.
+bounty. The public repository and verified KeeperHub transaction are complete;
+the remaining submission work is the short demo video and DoraHacks entry.

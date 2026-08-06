@@ -128,6 +128,25 @@ def test_status_uses_documented_endpoint_and_preserves_poll_hint():
     assert response.headers["X-Poll-Interval-Hint"] == "0"
 
 
+def test_status_accepts_opaque_uuid_like_execution_id():
+    fake = FakeTransport(
+        [ApiResponse(200, {"executionId": "4d1f-test-id", "status": "completed"}, {})]
+    )
+    client = KeeperHubClient("kh_test_secret", transport=fake)
+
+    client.execution_status("4d1f-test-id")
+
+    assert fake.calls[0].url.endswith("/api/execute/4d1f-test-id/status")
+
+
+@pytest.mark.parametrize("execution_id", ["", "../secret", "direct_123/status"])
+def test_status_rejects_unsafe_execution_id(execution_id):
+    client = KeeperHubClient("kh_test_secret", transport=FakeTransport([]))
+
+    with pytest.raises(ValueError, match="Invalid direct execution id"):
+        client.execution_status(execution_id)
+
+
 def test_api_key_is_not_exposed_by_safe_error():
     fake = FakeTransport([ApiResponse(401, {"error": "Invalid API key"}, {})])
     client = KeeperHubClient("kh_unit", transport=fake)
@@ -262,3 +281,50 @@ def test_live_demo_broadcasts_once_and_captures_authoritative_link():
     assert packet["status"]["poll_interval_hint"] == "0"
     assert len(fake.calls) == 4
     assert fake.calls[2].headers["Idempotency-Key"].startswith("proofline-")
+
+
+def test_live_demo_preserves_broadcast_when_status_lookup_fails():
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200,
+                [
+                    {
+                        "chainId": 84532,
+                        "name": "Base Sepolia",
+                        "status": "stable",
+                        "isEnabled": True,
+                        "isTestnet": True,
+                    }
+                ],
+                {},
+            ),
+            ApiResponse(
+                200,
+                {"success": True, "wouldRevert": False, "gasEstimate": "21000"},
+                {},
+            ),
+            ApiResponse(
+                202,
+                {
+                    "executionId": "4d1f-test-id",
+                    "status": "completed",
+                    "transactionHash": "0xabc",
+                    "transactionLink": "https://sepolia.basescan.org/tx/0xabc",
+                },
+                {},
+            ),
+            ApiResponse(404, {"error": "Execution not found"}, {}),
+        ]
+    )
+
+    packet = capture_evidence(
+        KeeperHubClient("kh_test_secret", transport=fake),
+        recipient=TO,
+        amount="0.000001",
+        approval_id="holder-approved-demo-002",
+    )
+
+    assert packet["broadcast"]["transactionHash"] == "0xabc"
+    assert packet["status"]["body"]["status"] == "unavailable"
+    assert "kh_test_secret" not in str(packet)

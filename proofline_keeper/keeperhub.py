@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import re
 from typing import Callable, Mapping, TypeAlias
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -186,6 +187,9 @@ class KeeperHubClient:
         return response.body
 
     def execution_status(self, execution_id: str) -> ApiResponse:
-        if not execution_id.startswith("direct_"):
+        # Treat execution IDs as opaque path segments. KeeperHub documents a
+        # ``direct_`` example, but live deployments may return UUID-like IDs.
+        # Validate the path boundary without coupling the client to a prefix.
+        if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", execution_id) is None:
             raise ValueError("Invalid direct execution id.")
         return self._request("GET", f"/api/execute/{execution_id}/status")
