@@ -27,7 +27,7 @@ An agent can reason correctly and still execute the wrong transaction when param
 ## Evidence
 
 - Public repository: https://github.com/ceodaradigu/proofline-keeper
-- Tests: 16 focused deterministic tests passing.
+- Tests: 17 focused deterministic tests passing.
 - AI-assistance disclosure: visible in the repository README.
 - Live transaction: **PENDING — insert the Base Sepolia explorer URL only after KeeperHub confirms it.**
 - Demo video: **PENDING — record after the real evidence packet exists.**
@@ -39,7 +39,8 @@ An agent can reason correctly and still execute the wrong transaction when param
 - [x] Deterministic test coverage
 - [x] AI-assistance disclosure
 - [x] Finish KeeperHub 2FA
-- [ ] Obtain the organization API key without recording it in the repository
+- [x] Obtain the organization API key without recording it in the repository
+- [ ] Fund the organization wallet with free Base Sepolia faucet ETH
 - [ ] Run the simulation-only evidence command
 - [ ] Approve the exact testnet intent and execute one Base Sepolia transaction
 - [ ] Verify the transaction receipt and explorer link

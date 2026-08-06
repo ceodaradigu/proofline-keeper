@@ -37,7 +37,9 @@ class FakeTransport:
 
 
 def tx() -> TransactionIntent:
-    return TransactionIntent(84532, TO, "0.001", purpose="Publish proof on Base Sepolia")
+    return TransactionIntent(
+        84532, TO, "0.001", purpose="Publish proof on Base Sepolia"
+    )
 
 
 def ready_decision(intent: TransactionIntent):
@@ -54,9 +56,13 @@ def ready_decision(intent: TransactionIntent):
 
 
 def test_simulation_uses_strict_boolean_and_no_idempotency_header():
-    fake = FakeTransport([ApiResponse(200, {
-        "success": True, "wouldRevert": False, "gasEstimate": "42000"
-    }, {})])
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200, {"success": True, "wouldRevert": False, "gasEstimate": "42000"}, {}
+            )
+        ]
+    )
     client = KeeperHubClient("kh_test_secret", transport=fake)
 
     receipt = client.simulate_transfer(tx())
@@ -64,6 +70,7 @@ def test_simulation_uses_strict_boolean_and_no_idempotency_header():
     assert receipt.success is True
     assert fake.calls[0].url.endswith("/api/execute/transfer")
     assert fake.calls[0].body["simulate"] is True
+    assert fake.calls[0].headers["User-Agent"].startswith("Proofline-Keeper/")
     assert "Idempotency-Key" not in fake.calls[0].headers
 
 
@@ -79,9 +86,9 @@ def test_broadcast_refuses_non_ready_decision_without_network_call():
 
 
 def test_broadcast_reuses_exact_body_and_sets_idempotency_key():
-    fake = FakeTransport([ApiResponse(202, {
-        "executionId": "direct_123", "status": "completed"
-    }, {})])
+    fake = FakeTransport(
+        [ApiResponse(202, {"executionId": "direct_123", "status": "completed"}, {})]
+    )
     intent = tx()
     decision = ready_decision(intent)
     client = KeeperHubClient("kh_test_secret", transport=fake)
@@ -104,9 +111,15 @@ def test_changed_intent_is_blocked_after_ready_decision():
 
 
 def test_status_uses_documented_endpoint_and_preserves_poll_hint():
-    fake = FakeTransport([ApiResponse(200, {
-        "executionId": "direct_123", "status": "completed", "receipts": []
-    }, {"X-Poll-Interval-Hint": "0"})])
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200,
+                {"executionId": "direct_123", "status": "completed", "receipts": []},
+                {"X-Poll-Interval-Hint": "0"},
+            )
+        ]
+    )
     client = KeeperHubClient("kh_test_secret", transport=fake)
 
     response = client.execution_status("direct_123")
@@ -125,16 +138,65 @@ def test_api_key_is_not_exposed_by_safe_error():
     assert "kh_unit" not in str(caught.value)
 
 
+def test_enabled_testnets_accepts_documented_top_level_list_response():
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200,
+                [
+                    {
+                        "chainId": 84532,
+                        "name": "Base Sepolia",
+                        "isEnabled": True,
+                        "isTestnet": True,
+                    },
+                    {
+                        "chainId": 8453,
+                        "name": "Base",
+                        "isEnabled": True,
+                        "isTestnet": False,
+                    },
+                ],
+                {},
+            )
+        ]
+    )
+    client = KeeperHubClient("kh_test_secret", transport=fake)
+
+    chains = client.enabled_testnets()
+
+    assert [chain["chainId"] for chain in chains] == [84532]
+
+
 def test_live_demo_defaults_to_simulation_only():
-    fake = FakeTransport([
-        ApiResponse(200, {"chains": [{
-            "chainId": 84532, "name": "Base Sepolia", "status": "stable",
-            "isEnabled": True, "isTestnet": True,
-        }]}, {}),
-        ApiResponse(200, {
-            "success": True, "wouldRevert": False, "gasEstimate": "21000",
-        }, {}),
-    ])
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200,
+                {
+                    "chains": [
+                        {
+                            "chainId": 84532,
+                            "name": "Base Sepolia",
+                            "status": "stable",
+                            "isEnabled": True,
+                            "isTestnet": True,
+                        }
+                    ]
+                },
+                {},
+            ),
+            ApiResponse(
+                200,
+                {
+                    "success": True,
+                    "wouldRevert": False,
+                    "gasEstimate": "21000",
+                },
+                {},
+            ),
+        ]
+    )
 
     packet = capture_evidence(
         KeeperHubClient("kh_test_secret", transport=fake),
@@ -148,20 +210,45 @@ def test_live_demo_defaults_to_simulation_only():
 
 
 def test_live_demo_broadcasts_once_and_captures_authoritative_link():
-    fake = FakeTransport([
-        ApiResponse(200, {"chains": [{
-            "chainId": "84532", "name": "Base Sepolia", "status": "stable",
-            "isEnabled": True, "isTestnet": True,
-        }]}, {}),
-        ApiResponse(200, {
-            "success": True, "wouldRevert": False, "gasEstimate": "21000",
-        }, {}),
-        ApiResponse(202, {"executionId": "direct_live", "status": "completed"}, {}),
-        ApiResponse(200, {
-            "executionId": "direct_live", "status": "completed",
-            "transactionHash": "0xabc", "transactionLink": "https://sepolia.basescan.org/tx/0xabc",
-        }, {"X-Poll-Interval-Hint": "0"}),
-    ])
+    fake = FakeTransport(
+        [
+            ApiResponse(
+                200,
+                {
+                    "chains": [
+                        {
+                            "chainId": "84532",
+                            "name": "Base Sepolia",
+                            "status": "stable",
+                            "isEnabled": True,
+                            "isTestnet": True,
+                        }
+                    ]
+                },
+                {},
+            ),
+            ApiResponse(
+                200,
+                {
+                    "success": True,
+                    "wouldRevert": False,
+                    "gasEstimate": "21000",
+                },
+                {},
+            ),
+            ApiResponse(202, {"executionId": "direct_live", "status": "completed"}, {}),
+            ApiResponse(
+                200,
+                {
+                    "executionId": "direct_live",
+                    "status": "completed",
+                    "transactionHash": "0xabc",
+                    "transactionLink": "https://sepolia.basescan.org/tx/0xabc",
+                },
+                {"X-Poll-Interval-Hint": "0"},
+            ),
+        ]
+    )
 
     packet = capture_evidence(
         KeeperHubClient("kh_test_secret", transport=fake),
