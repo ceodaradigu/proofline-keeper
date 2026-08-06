@@ -31,7 +31,7 @@ An agent can reason correctly and still execute the wrong transaction when param
 - AI-assistance disclosure: visible in the repository README.
 - Live transaction: https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040
 - KeeperHub evidence: execution `wl0b2ni7142qluy0qvvko`, status `completed`, verified receipt in block `45139083`, sponsored gas, and secret-free packet at `evidence/base-sepolia-live.json`.
-- Demo video: **PENDING — record after the real evidence packet exists.**
+- Demo video: https://youtu.be/tdRdqGdrX8M (upload and checks complete; publish before final submission).
 
 ## Final submission gate
 
@@ -45,7 +45,7 @@ An agent can reason correctly and still execute the wrong transaction when param
 - [x] Run the simulation-only evidence command
 - [x] Approve the exact testnet intent and execute one Base Sepolia transaction
 - [x] Verify the transaction receipt and explorer link
-- [ ] Record a short demo using the real evidence packet
-- [ ] Replace both `PENDING` fields above and submit to DoraHacks
+- [x] Record and upload a short demo using the real evidence packet
+- [ ] Publish the YouTube draft and submit the completed BUIDL to DoraHacks
 
 No transaction, prize, or award is claimed until the corresponding authoritative evidence exists.

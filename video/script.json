@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Agents need a transaction firewall",
+    "narration": "An AI agent can reason correctly and still send the wrong transaction. A recipient changes after review, a simulation becomes stale, or a retry broadcasts twice. Proofline Keeper turns those failure modes into a deterministic execution boundary. The agent may propose an action, but the boundary decides whether it is safe to send."
+  },
+  {
+    "title": "Exact intent, simulated before approval",
+    "narration": "Every write starts as an exact intent: chain, recipient, token, amount, and purpose. KeeperHub simulates that same request. Proofline hashes both the intent and the simulation, applies a hard amount cap and expiry, and binds human approval to those exact hashes. Only a ready decision receives a stable idempotency key for one broadcast."
+  },
+  {
+    "title": "Failure is explicit, not optimistic",
+    "narration": "The negative path is the product. Missing simulation is blocked. A revert, stale receipt, future timestamp, changed recipient, higher amount, expired approval, or reused approval for different evidence is blocked. Twenty two focused tests cover the decision surface, request shape, live response variations, path safety, and evidence recovery without exposing the API key."
+  },
+  {
+    "title": "Live on Base Sepolia through KeeperHub",
+    "narration": "Here is the real proof. KeeperHub simulated a transfer of one millionth of testnet Ether with no revert, then executed the approved intent on Base Sepolia. Execution W L zero B two N I seven one four two completed successfully. KeeperHub verified the receipt in block forty five million one hundred thirty nine thousand eighty three. Gas was sponsored, and no mainnet money was used."
+  },
+  {
+    "title": "Live integration evidence improved the client",
+    "narration": "The live API returned an opaque execution identifier, while the documentation example used a direct prefix. The first client was too strict. Proofline now accepts a safe opaque path segment, still rejects traversal, and preserves the broadcast receipt if status polling is temporarily unavailable. That is the onboarding lesson: validate security boundaries, not incidental identifier formats."
+  },
+  {
+    "title": "A verifiable boundary for agent execution",
+    "narration": "The public repository includes the safety core, KeeperHub adapter, simulation packet, verified live receipt, and reproduction tests. Reviewers can inspect the exact transaction, rerun the deterministic suite, and see where approval becomes execution. Proofline Keeper: simulate, bind, approve, and prove."
+  }
+]
