@@ -85,6 +85,20 @@ The transaction was also checked independently through the public Base Sepolia
 JSON-RPC endpoint: block `45139083`, receipt status `1`, and gas used `47681`.
 Testnet ETH has no monetary value and no mainnet funds were used.
 
+## Watch the boundary fail closed
+
+The 68-second continuous demo shows the exact approval flow, then changes one
+field at a time: an unapproved recipient, an amount above the cap, and a stale
+simulation are all blocked before broadcast. Only the unchanged intent becomes
+`READY`, and the closing receipt is independently verifiable on Base Sepolia.
+
+- Video: https://youtu.be/cvTg8BIlaBw
+- Public transaction: https://sepolia.basescan.org/tx/0x1772f39f5beb7bfeb6813124bccd3854bf31d956b65ac9becf8541c83867e040
+- Reproduce locally: `python -m pytest -q`
+
+The video was produced with AI-assisted tools and deterministic project data.
+It uses testnet evidence only and does not show or imply mainnet funds.
+
 ## Planned KeeperHub flow
 
 1. Build a `TransactionIntent` from the requested action.
@@ -97,12 +111,22 @@ Testnet ETH has no monetary value and no mainnet funds were used.
 7. Poll `GET /api/execute/{executionId}/status`, honour its poll hint, and
    persist verified receipts, the transaction link, and the audit trail.
 
-The first live demonstration will use Base Sepolia and faucet funds. Mainnet
-funds will not be used merely to create a hackathon demo.
+The live demonstration used Base Sepolia and testnet funds. Mainnet funds were
+not used merely to create a hackathon demo.
+
+## Need an evidence-first launch repair?
+
+RELAUNCH DEPT. turns public technical proof into a clearer launch page, reusable
+visuals and measurable distribution. The current one-time options are a
+24-hour landing-page teardown for USD 59 and a 48-hour launch-rescue sprint for
+USD 249:
+
+https://www.daradigu.com/#offers
 
 ## Competition target
 
 Built for the worldwide KeeperHub Agents Onchain Hackathon. The target is the
 main agent prize and the separately judged Best Onboarding UX Improvement
-bounty. The public repository and verified KeeperHub transaction are complete;
-the remaining submission work is the short demo video and DoraHacks entry.
+bounty. The public repository, verified KeeperHub transaction and continuous
+demo are complete. No prize, placement or payment is claimed unless the
+organizer confirms it.
